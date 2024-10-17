@@ -1,0 +1,7 @@
+*.npy
+.DS_Store
+*.pt
+.ipynb_checkpoints
+*.xlsx
+*.csv
+nohup.out
