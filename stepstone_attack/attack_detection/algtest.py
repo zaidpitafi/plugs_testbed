@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-duration = 10
+duration = 1
 
 def get_args_info(args):
 
@@ -33,6 +33,7 @@ def get_args_info(args):
     dst['db'] = args.dst_db
     if args.src_ip.find('https://') != -1:
         src['ssl'] = True
+        # src['ssl'] = False
     else:
         src['ssl'] = False
 
@@ -47,19 +48,17 @@ def get_args_info(args):
     dst['passw'] = 'sensorweb711'
 
     if args.debug == 'True':
-        debug = True #str2bool(config.get('general', 'debug'))
+        debug = True 
     else:
-        debug = False #str2bool(config.get('general', 'debug'))
+        debug = False
 
     if(args.start == None):
         startEpoch = datetime.now().timestamp() - duration
-        # print('Start:', startEpoch)
     else:
         print(args.start)
         startEpoch = local_time_epoch(args.start, "America/New_York")
         
     if(args.end == None):
-        # endEpoch = datetime.now().timestamp() 
         endEpoch = startEpoch + duration
         endSet = False
     else:
@@ -97,7 +96,6 @@ def get_args_info(args):
         url = url + "&to=now"
     url = url + "&orgId=1&refresh=1s"
 
-    # return src, dst, table_name, startEpoch, endEpoch, endSet, url, debug
     return src, dst, table_data_names, startEpoch, endEpoch, endSet, url, debug
 
 
@@ -127,7 +125,7 @@ def main(args):
   print("Click here to see the results in Grafana:\n\n" + url)
   webbrowser.open(url, new=2)
   startEpoch = math.floor(startEpoch)
-  epoch2 = startEpoch -1 # int( (current - datetime(1970,1,1)).total_seconds())
+  epoch2 = startEpoch - 1 # int( (current - datetime(1970,1,1)).total_seconds())
   epoch1 = epoch2 - 10
 
   thres1=0.2 #(normally, thres2 < thres1) thres1 is threshold for detecting anomalies' starts
@@ -135,7 +133,7 @@ def main(args):
   state=0
 
   alg.logpath = ""
-  result = []
+  results = []
 
   # startdata, times = read_influx2(src, unit, 'NI_Waveform', 'sensor1_AC_mag', epoch2_ios, pre_len, startEpoch) # sensor2_DC_mag
 
@@ -150,7 +148,9 @@ def main(args):
   x1 /= np.linalg.norm(x1)
   score_start, x1 = 1, x1 #detect.SingularSpectrumTransformation(win_length=win_length, x0=x1, n_components=2,order=order, lag=lag,is_scaled=True).score_online(startdata)
   Score_start=score_start+Score_start*10**5
-
+  # print("Config:", src['ip'].split('//')[1], src['port'], src['user'], src['passw'], src['db'], src['ssl'])
+  print('a', src['ip'].split('//'))
+  # quit()
   print("start score:",Score_start)
 
   j=0
@@ -196,7 +196,7 @@ def main(args):
     points = list(result.get_points())
     values =  list(map(operator.itemgetter('value'), points))
     times  =  list(map(operator.itemgetter('time'),  points))
-    # print(values)
+    print(values)
     if len(values) <=0: continue
     for i in range(len(times)):
       times[i] = influx_query_time_epoch(times[i], "UTC")
@@ -259,9 +259,9 @@ if __name__== '__main__':
   parser.add_argument("--unit", type=str, help='BDot MAC address', default='dc:da:0c:3c:60:54')
   parser.add_argument("--start", type=str, default=None, help='start time')
   parser.add_argument("--end", type=str, default=None, help='end time')    
-  parser.add_argument('--src_ip', type=str, default='https://sensorweb.us',
+  parser.add_argument('--src_ip', type=str, default='https://sensordata.engr.uga.edu',
                       help='the default source influxdb server')   
-  parser.add_argument('--dst_ip', type=str, default='https://sensorweb.us',
+  parser.add_argument('--dst_ip', type=str, default='https://sensordata.engr.uga.edu',
                       help='the default dst influxdb server')     
   parser.add_argument('--src_db', type=str, default='waveform',
                       help='the default source influxdb DB name')       
@@ -271,20 +271,14 @@ if __name__== '__main__':
                       help='the table_data_names of BS, HR, RR, SP, DP, SQ, BM')
   parser.add_argument('--append_version', type=str, default='False', 
                       help='whether the version is appended to table_name or not: True/False')                
-  # parser.add_argument('--vitals', type=str, default='HRSD', help='the vitals to calculate')
   parser.add_argument('--algo_name', type=str, default='SST', 
                       help='the default algorithm name')
-  # parser.add_argument('--algo_bp', type=str, default='algo_VTCN', #'algo_LSTMAttention', #
-  #                     help='the default BP model name')
   parser.add_argument('--user', type=str, default='smartplug', 
                       help='the default usename')
   parser.add_argument('--passw', type=str, default='joint@122', 
                       help='the default password')
-  parser.add_argument('--debug', type=str, default='False', 
+  parser.add_argument('--debug', type=str, default='True', 
                       help='the debug mode: True/False')
-  # parser.add_argument('--version', type=str, default='animals', 
-  #                     help='the algorithm version')
-  # parser.add_argument('--rr_duration', type=int, default=10, help='rr duration')
 
   # if(len(sys.argv) <= 1):
   #     progname = sys.argv[0]
