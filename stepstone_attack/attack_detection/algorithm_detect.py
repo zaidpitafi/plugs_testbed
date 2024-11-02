@@ -126,6 +126,7 @@ class SingularSpectrumTransformation():
         # else:
         x_hist = x[:self.win_length+self.lag]
         x_new = x[self.lag:]
+        print('X_hist', self.x0)
         score, x1 = _score_online(x_hist, x_new, self.x0, self.order,
             self.win_length, self.lag, self.n_components, self.rank_lanczos,
             self.eps, use_lanczos=self.use_lanczos)

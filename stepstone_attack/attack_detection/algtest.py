@@ -17,7 +17,7 @@ import warnings
 warnings.filterwarnings("ignore")
 
 
-duration = 1
+duration = 60
 
 def get_args_info(args):
 
@@ -114,7 +114,7 @@ def main(args):
   buffersize   = 60 # config.get('general', 'buffersize')
   samplingrate = 0.1 # int(config.get('general', 'samplingrate'))
   hrTimeWindow    = 30 # int(config.get('main', 'hrTimeWindow'))
-  maxbuffersize   = int(buffersize) * int(samplingrate) * 10
+  maxbuffersize   = 200
   buffer      = []
   buffertime  = []
   unit = args.unit
@@ -123,10 +123,10 @@ def main(args):
   print("### Start time:", startEpoch, " ### \n")
   print("### End time:", endEpoch, " ### \n")
   print("Click here to see the results in Grafana:\n\n" + url)
-  webbrowser.open(url, new=2)
+  # webbrowser.open(url, new=2)
   startEpoch = math.floor(startEpoch)
   epoch2 = startEpoch - 1 # int( (current - datetime(1970,1,1)).total_seconds())
-  epoch1 = epoch2 - 10
+  epoch1 = epoch2 - 60
 
   thres1=0.2 #(normally, thres2 < thres1) thres1 is threshold for detecting anomalies' starts
   thres2=0.1 #thres2 is threshold for detecting anomalies' starts
@@ -142,15 +142,13 @@ def main(args):
   win_length=20
 
   Score_start=np.zeros(1) # get the initial score, Score_start
-  x1 = np.empty(order, dtype=np.float64) 
+  # x1 = np.empty(order, dtype=np.float64) 
+  x1 = np.ones(order, dtype=np.float64) 
   x1 = np.random.rand(order)
   print("shape of x1:",x1.shape)
   x1 /= np.linalg.norm(x1)
   score_start, x1 = 1, x1 #detect.SingularSpectrumTransformation(win_length=win_length, x0=x1, n_components=2,order=order, lag=lag,is_scaled=True).score_online(startdata)
   Score_start=score_start+Score_start*10**5
-  # print("Config:", src['ip'].split('//')[1], src['port'], src['user'], src['passw'], src['db'], src['ssl'])
-  print('a', src['ip'].split('//'))
-  # quit()
   print("start score:",Score_start)
 
   j=0
@@ -177,7 +175,7 @@ def main(args):
       if(debug): print("**** Ended as ", epoch2, " > ", endEpoch, " ***")
       print("Click here to see the results in Grafana:\n\n" + url)
       quit()
-
+    print('**************')
     if(debug): print('start:', epoch_time_local(epoch1, "America/New_York"), 'end:', epoch_time_local(epoch2, "America/New_York"))
 
     query = 'SELECT "value" FROM Current WHERE ("location" = \''+unit+'\')  and time >= '+ str(int(epoch1*10e8))+' and time <= '+str(int(epoch2*10e8))
@@ -208,9 +206,9 @@ def main(args):
 
     if(debug):
       print("buffLen: ", buffLen)
-      if(buffLen>0):
-        print("Buffer Time (America/New_York):    " + epoch_time_local(buffertime[0], "America/New_York") 
-            + "  -   " + epoch_time_local(buffertime[-1], "America/New_York"))
+      # if(buffLen>0):
+      #   print("Buffer Time (America/New_York):    " + epoch_time_local(buffertime[0], "America/New_York") 
+      #       + "  -   " + epoch_time_local(buffertime[-1], "America/New_York"))
 
     # Cutting the buffer when overflow
     if(buffLen > maxbuffersize):
@@ -219,17 +217,18 @@ def main(args):
         del buffertime[0:difSize]
         buffLen    = buffLen - difSize
     # get more data if the buffer does not have enough data for the minimum window size
+    # print(buffertime)
+    if (buffLen <= 5*win_length): continue
+    timestamp = buffertime[-1] #epoch2 # 
+    timestamp = math.floor(timestamp)# round(timestamp)
+    nowtime = epoch_time_local(timestamp, "America/New_York")
+    # timestamp = local_time_epoch(nowtime[:-1], "UTC")
 
-    if True: #(buffLen >= occupancy_window):
-        timestamp = buffertime[-1] #epoch2 # 
-        timestamp = math.floor(timestamp)# round(timestamp)
-        nowtime = epoch_time_local(timestamp, "America/New_York")
-        # timestamp = local_time_epoch(nowtime[:-1], "UTC")
+    data=buffer[-5*win_length:]
 
-    data=values
-
-    stream=np.array(data)  #### the new data coming through
+    stream=np.array(data)/100  #### the new data coming through
     print("Shape of stream data: ",stream.shape)
+    # print("Stream Data", stream)
     # lastdata=start ### the initial start of the algorithm
     score,duration,x1= stream_SST(stream,win_length,n_component=2,order=order,lag=lag,x0=x1) #,state_last=state,thres1=thres1,thres2=thres2
     print("score of this window:", score)
@@ -265,7 +264,7 @@ if __name__== '__main__':
                       help='the default dst influxdb server')     
   parser.add_argument('--src_db', type=str, default='waveform',
                       help='the default source influxdb DB name')       
-  parser.add_argument('--dst_db', type=str, default='algtest',
+  parser.add_argument('--dst_db', type=str, default='waveform',
                       help='the default source influxdb DB name')                 
   parser.add_argument('--table_data_names', type=str, default='vitals:occupancy:vitals:heartrate:vitals:respiratoryrate:vitals:systolic:vitals:diastolic:vitals:quality:vitals:movement', 
                       help='the table_data_names of BS, HR, RR, SP, DP, SQ, BM')
