@@ -350,7 +350,7 @@ def write_influx(influx, unit, table_name, data_name, data, start_timestamp, fs)
     for value in data:
         count += 1
         http_post += "\n" + table_name +",location=" + unit + " "
-        http_post += data_name + "=" + str(value) + " " + str(int(start_timestamp*10e8))
+        http_post += data_name + "=" + str(value) + " " + str(int(start_timestamp))
         start_timestamp +=  1/fs
         if(count >= max_size):
             http_post += "\'  &"

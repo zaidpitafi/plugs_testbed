@@ -16,7 +16,6 @@ from utils import write_influx
 import warnings
 warnings.filterwarnings("ignore")
 
-
 duration = 60
 
 def get_args_info(args):
@@ -33,7 +32,6 @@ def get_args_info(args):
     dst['db'] = args.dst_db
     if args.src_ip.find('https://') != -1:
         src['ssl'] = True
-        # src['ssl'] = False
     else:
         src['ssl'] = False
 
@@ -42,10 +40,8 @@ def get_args_info(args):
     else:
         dst['ssl'] = False
 
-    src['user'] = args.user
-    src['passw'] = args.passw
-    dst['user'] = 'algtest'
-    dst['passw'] = 'sensorweb711'
+    src['user'] = dst['user']= args.user
+    src['passw'] = dst['passw']= args.passw
 
     if args.debug == 'True':
         debug = True 
@@ -59,7 +55,7 @@ def get_args_info(args):
         startEpoch = local_time_epoch(args.start, "America/New_York")
         
     if(args.end == None):
-        endEpoch = startEpoch + duration
+        endEpoch = startEpoch + 20
         endSet = False
     else:
         endEpoch = local_time_epoch(args.end, "America/New_York")
@@ -72,19 +68,20 @@ def get_args_info(args):
         appedix = args.version
     
     #back_compatible_names
-    table_data_list = args.table_data_names.split(":")
-    table_data_names = {
-        'BS': [table_data_list[0]+appedix, table_data_list[1]],
-        'HR': [table_data_list[2]+appedix, table_data_list[3]],
-        'RR': [table_data_list[4]+appedix, table_data_list[5]],
-        'SP': [table_data_list[6]+appedix, table_data_list[7]],
-        'DP': [table_data_list[8]+appedix, table_data_list[9]],
-        'SQ': [table_data_list[10]+appedix, table_data_list[11]],
-        'BM': [table_data_list[12]+appedix, table_data_list[13]]
-    }
+    # table_data_list = args.table_data_names.split(":")
+    # table_data_names = {
+    #     'BS': [table_data_list[0]+appedix, table_data_list[1]],
+    #     'HR': [table_data_list[2]+appedix, table_data_list[3]],
+    #     'RR': [table_data_list[4]+appedix, table_data_list[5]],
+    #     'SP': [table_data_list[6]+appedix, table_data_list[7]],
+    #     'DP': [table_data_list[8]+appedix, table_data_list[9]],
+    #     'SQ': [table_data_list[10]+appedix, table_data_list[11]],
+    #     'BM': [table_data_list[12]+appedix, table_data_list[13]]
+    # }
     # print (table_data_names)
-    table_name = table_data_names['SP'][0]
-    # url = url + "&var-name=" + table_name
+    table_data_names = []
+    table_name = 'sensor1_AC_mag_score'
+
     url = url + "&var-BedName=" + str(args.unit)
     if(args.start is not None):
         url = url + "&from=" + str(int(startEpoch*1000)) #+ "000"
@@ -102,18 +99,17 @@ def get_args_info(args):
 ########### main entrance ########
 def main(args):
   progname = sys.argv[0]
-  if(len(sys.argv)<2):
-    print("Usage: %s mac [start] [end] [ip] [https/http]" %(progname))
-    print("Example: %s b8:27:eb:97:f5:ac   # start with current time and run in real-time as if in a node" %(progname))
-    print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 # start with the specified time and run non-stop" %(progname))
-    print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 2020-08-13T02:05:00.030 # start and end with the specified time" %(progname))
-    print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 2020-08-13T02:05:00.030 sensorweb.us https # specify influxdb IP and http/https" %(progname))
-    quit()
+  # if(len(sys.argv)<2):
+  #   print("Usage: %s mac [start] [end] [ip] [https/http]" %(progname))
+  #   print("Example: %s b8:27:eb:97:f5:ac   # start with current time and run in real-time as if in a node" %(progname))
+  #   print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 # start with the specified time and run non-stop" %(progname))
+  #   print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 2020-08-13T02:05:00.030 # start and end with the specified time" %(progname))
+  #   print("Example: %s b8:27:eb:97:f5:ac 2020-08-13T02:03:00.200 2020-08-13T02:05:00.030 sensorweb.us https # specify influxdb IP and http/https" %(progname))
+  #   quit()
 
  # Parameters from Config file
   buffersize   = 60 # config.get('general', 'buffersize')
   samplingrate = 0.1 # int(config.get('general', 'samplingrate'))
-  hrTimeWindow    = 30 # int(config.get('main', 'hrTimeWindow'))
   maxbuffersize   = 200
   buffer      = []
   buffertime  = []
@@ -132,10 +128,7 @@ def main(args):
   thres2=0.1 #thres2 is threshold for detecting anomalies' starts
   state=0
 
-  alg.logpath = ""
   results = []
-
-  # startdata, times = read_influx2(src, unit, 'NI_Waveform', 'sensor1_AC_mag', epoch2_ios, pre_len, startEpoch) # sensor2_DC_mag
 
   order=10
   lag=10
@@ -143,15 +136,14 @@ def main(args):
 
   Score_start=np.zeros(1) # get the initial score, Score_start
   # x1 = np.empty(order, dtype=np.float64) 
-  x1 = np.ones(order, dtype=np.float64) 
+  x1 = np.ones(order, dtype=np.float16) 
   x1 = np.random.rand(order)
+  x1 = np.round(x1,2)
   print("shape of x1:",x1.shape)
   x1 /= np.linalg.norm(x1)
   score_start, x1 = 1, x1 #detect.SingularSpectrumTransformation(win_length=win_length, x0=x1, n_components=2,order=order, lag=lag,is_scaled=True).score_online(startdata)
   Score_start=score_start+Score_start*10**5
   print("start score:",Score_start)
-
-  j=0
 
   try:
     client = InfluxDBClient(src['ip'].split('//')[1], src['port'], src['user'], src['passw'], src['db'], src['ssl'])
@@ -167,9 +159,10 @@ def main(args):
     epoch2 = epoch2 + 1
     epoch1 = epoch1 + 1
 
-    if (endSet == False and (current-epoch2) < 1):
+    if (endSet == False and (current-epoch2) < 10):
       time.sleep(1)
-      if(debug): print("*********")
+      if(debug): 
+         print("Waiting*********")
 
     if (endSet and epoch2 > endEpoch):
       if(debug): print("**** Ended as ", epoch2, " > ", endEpoch, " ***")
@@ -206,9 +199,9 @@ def main(args):
 
     if(debug):
       print("buffLen: ", buffLen)
-      # if(buffLen>0):
-      #   print("Buffer Time (America/New_York):    " + epoch_time_local(buffertime[0], "America/New_York") 
-      #       + "  -   " + epoch_time_local(buffertime[-1], "America/New_York"))
+      if(buffLen>0):
+        print("Buffer Time (America/New_York):    " + epoch_time_local(buffertime[0], "America/New_York") 
+            + "  -   " + epoch_time_local(buffertime[-1], "America/New_York"))
 
     # Cutting the buffer when overflow
     if(buffLen > maxbuffersize):
@@ -221,6 +214,7 @@ def main(args):
     if (buffLen <= 5*win_length): continue
     timestamp = buffertime[-1] #epoch2 # 
     timestamp = math.floor(timestamp)# round(timestamp)
+    print('Timestamp here:', timestamp)
     nowtime = epoch_time_local(timestamp, "America/New_York")
     # timestamp = local_time_epoch(nowtime[:-1], "UTC")
 
@@ -230,8 +224,8 @@ def main(args):
     print("Shape of stream data: ",stream.shape)
     # print("Stream Data", stream)
     # lastdata=start ### the initial start of the algorithm
-    score,duration,x1= stream_SST(stream,win_length,n_component=2,order=order,lag=lag,x0=x1) #,state_last=state,thres1=thres1,thres2=thres2
-    print("score of this window:", score)
+    score,dur,x1= stream_SST(stream,win_length,n_component=2,order=order,lag=lag,x0=x1) #,state_last=state,thres1=thres1,thres2=thres2
+    score = np.round(score,4)
 
     if score >= thres1:  #and state_last==0  
       print("the anomaly starts") 
@@ -239,23 +233,24 @@ def main(args):
     else:
       state=0
 
-    print("state of this window is :", state)
 
     #print('nowtime:', nowtime)
     print("The anomaly score for current time point is ",score)
-    print("The time that processes", duration)
+    print("The time that processes", dur)
     print("The current state is:", state)
+    print('timestamp', timestamp)
+    timestamp = int(epoch2*10e8)   #locacl_time_epoch(str(nowtime[:-1]), "UTC")
     
-    timestamp = int(epoch2* 1000000000)   #locacl_time_epoch(str(nowtime[:-1]), "UTC")
 
     #############################  CHANGE TO NEW FORMAT
     write_influx(dst, unit, 'sensor1_AC_mag_score', 'score', [score], timestamp, 1)
     write_influx(dst, unit, 'sensor1_AC_mag_score', 'state', [state], timestamp, 1)
+    print('Written to timestamp:', timestamp)
 
 
 if __name__== '__main__':
   parser = argparse.ArgumentParser(description='Node Test - Smart Plugs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("--unit", type=str, help='BDot MAC address', default='dc:da:0c:3c:60:54')
+  parser.add_argument("unit", type=str, help='BDot MAC address', default='dc:da:0c:3c:60:54')
   parser.add_argument("--start", type=str, default=None, help='start time')
   parser.add_argument("--end", type=str, default=None, help='end time')    
   parser.add_argument('--src_ip', type=str, default='https://sensordata.engr.uga.edu',
@@ -279,15 +274,6 @@ if __name__== '__main__':
   parser.add_argument('--debug', type=str, default='True', 
                       help='the debug mode: True/False')
 
-  # if(len(sys.argv) <= 1):
-  #     progname = sys.argv[0]
-  #     print("Usage: %s mac [start] [end] [ip] [https/http]" %(progname))
-  #     print("Example: %s b8:27:eb:97:f5:ac   # start with current time and run in real-time as if in a node" %(progname))
-  #     print("Example: %s b8:27:eb:97:f5:ac --start=2020-08-13T02:03:00.200 # start with the specified time and run non-stop" %(progname))
-  #     print("Example: %s b8:27:eb:6c:6e:22 --start=2021-02-05T12:45:00.000 --end=2021-02-05T13:10:09.000 --version=v1 # start and end with the specified time" %(progname))
-  #     print("Example: %s b8:27:eb:97:f5:ac --start=2020-08-13T02:03:00.200 --end=2020-08-13T02:05:00.030 --src_ip=https://sensorweb.us --dst_ip=https://sensorweb.us # specify influxdb IP" %(progname))
-  #     parser.print_help()
-  #     quit()
 
   args = parser.parse_args()
   print('Args:', args)
