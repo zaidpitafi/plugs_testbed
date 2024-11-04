@@ -102,8 +102,8 @@ do
         fi
         # echo "cd $SCRIPTPATH"
         cd $SCRIPTPATH
-        # nohup $PYTHON $SERVICE &
-        $PYTHON $SERVICE
+        nohup $PYTHON $SERVICE &
+        # $PYTHON $SERVICE
       fi
   fi
 done < "$input"

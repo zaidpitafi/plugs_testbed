@@ -159,7 +159,7 @@ def main(args):
     epoch2 = epoch2 + 1
     epoch1 = epoch1 + 1
 
-    if (endSet == False and (current-epoch2) < 10):
+    if (endSet == False and (current-epoch2) < 20):
       time.sleep(1)
       if(debug): 
          print("Waiting*********")
@@ -220,7 +220,7 @@ def main(args):
 
     data=buffer[-5*win_length:]
 
-    stream=np.array(data)/100  #### the new data coming through
+    stream=np.array(data)/1000  #### the new data coming through
     print("Shape of stream data: ",stream.shape)
     # print("Stream Data", stream)
     # lastdata=start ### the initial start of the algorithm
