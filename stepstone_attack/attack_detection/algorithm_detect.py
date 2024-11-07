@@ -126,9 +126,11 @@ class SingularSpectrumTransformation():
         # else:
         x_hist = x[:self.win_length+self.lag]
         x_new = x[self.lag:]
-        print('X_hist', x_hist)
-        print('X_new', x_new)
-        print('x0', self.x0)
+        # print('X_hist', x_hist)
+        # print('X_new', x_new)
+        # print('x0', self.x0)
+        # print('win_length:', self.win_length)
+        # print('order:', self.order)
         score, x1 = _score_online(x_hist, x_new, self.x0, self.order,
             self.win_length, self.lag, self.n_components, self.rank_lanczos,
             self.eps, use_lanczos=self.use_lanczos)
@@ -140,13 +142,15 @@ def _score_online(x, y, x0, order, win_length, lag, n_components, rank, eps, use
     """Core implementation of offline score calculation."""
     # start_idx = win_length + order + lag + 1
     # end_idx = x.size + 1
-
+    # print('X:',x)
+    # print('Y:', y)
+    # print('x0:', x0)
 
 
     score = np.zeros(1)
     # for t in range(start_idx, end_idx):
     # compute score at each index
-
+    
     # get Hankel matrix
     X_history = _create_hankel(x, order,
         start=order,
@@ -154,14 +158,18 @@ def _score_online(x, y, x0, order, win_length, lag, n_components, rank, eps, use
     X_test = _create_hankel(y, order,
         start=order,
         end=win_length)
-
+    
     if use_lanczos:
         score, x1 = _sst_lanczos(X_test, X_history, n_components,
                                       rank, x0)
         # update initial vector for power method
+        print('here', score)
+        print('there', x1)
         x0 = x1 + eps * np.random.rand(x0.size)
+        print('bone of contention', x0)
         x0 /= np.linalg.norm(x0)
     else:
+        print('bbb')
         score = _sst_svd(X_test, X_history, n_components)
 
     return score,x0
@@ -196,7 +204,9 @@ def _sst_lanczos(X_test, X_history, n_components, rank, x0):
     u, _, _ = power_method(P_test, x0, n_iter=1)
     T = lanczos(P_history, u, rank)
     vec, val = eig_tridiag(T)
-    return 1 - (vec[0, :n_components] ** 2).sum(), u
+    scr = 1 - (vec[0, :n_components] ** 2).sum()
+    scr = np.nan_to_num(scr, nan=0.0)
+    return scr, u
 
 
 @jit("f8(f8[:,:],f8[:,:],u1)", nopython=True)

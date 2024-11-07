@@ -109,8 +109,8 @@ def main(args):
 
  # Parameters from Config file
   buffersize   = 60 # config.get('general', 'buffersize')
-  samplingrate = 0.1 # int(config.get('general', 'samplingrate'))
-  maxbuffersize   = 200
+  samplingrate = 4000 # int(config.get('general', 'samplingrate'))
+  maxbuffersize   = 10*samplingrate
   buffer      = []
   buffertime  = []
   unit = args.unit
@@ -122,7 +122,7 @@ def main(args):
   # webbrowser.open(url, new=2)
   startEpoch = math.floor(startEpoch)
   epoch2 = startEpoch - 1 # int( (current - datetime(1970,1,1)).total_seconds())
-  epoch1 = epoch2 - 60
+  epoch1 = epoch2 - 1
 
   thres1=0.2 #(normally, thres2 < thres1) thres1 is threshold for detecting anomalies' starts
   thres2=0.1 #thres2 is threshold for detecting anomalies' starts
@@ -171,7 +171,7 @@ def main(args):
     print('**************')
     if(debug): print('start:', epoch_time_local(epoch1, "America/New_York"), 'end:', epoch_time_local(epoch2, "America/New_York"))
 
-    query = 'SELECT "value" FROM Current WHERE ("location" = \''+unit+'\')  and time >= '+ str(int(epoch1*10e8))+' and time <= '+str(int(epoch2*10e8))
+    query = 'SELECT "value" FROM waveform_Current WHERE ("location" = \''+unit+'\')  and time >= '+ str(int(epoch1*10e8))+' and time <= '+str(int(epoch2*10e8))
 
     print(query)
 
@@ -220,7 +220,9 @@ def main(args):
 
     data=buffer[-5*win_length:]
 
-    stream=np.array(data)/1000  #### the new data coming through
+    stream=np.array(data)/1000000000  #### the new data coming through
+    stream = np.nan_to_num(stream, nan=0.0)
+
     print("Shape of stream data: ",stream.shape)
     # print("Stream Data", stream)
     # lastdata=start ### the initial start of the algorithm
@@ -250,9 +252,9 @@ def main(args):
 
 if __name__== '__main__':
   parser = argparse.ArgumentParser(description='Node Test - Smart Plugs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-  parser.add_argument("unit", type=str, help='BDot MAC address', default='dc:da:0c:3c:60:54')
-  parser.add_argument("--start", type=str, default=None, help='start time')
-  parser.add_argument("--end", type=str, default=None, help='end time')    
+  parser.add_argument("unit", type=str, help='BDot MAC address', default='04:04:04:04:04:04')
+  parser.add_argument("--start", type=str, default='2024-11-06T09:32:10.000', help='start time')
+  parser.add_argument("--end", type=str, default='2024-11-06T10:48:30.000', help='end time')    
   parser.add_argument('--src_ip', type=str, default='https://sensordata.engr.uga.edu',
                       help='the default source influxdb server')   
   parser.add_argument('--dst_ip', type=str, default='https://sensordata.engr.uga.edu',

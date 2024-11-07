@@ -1,7 +1,7 @@
 #!/bin/bash
 PYTHON=$(which python3)
 SCRIPTPATH="$( cd -- "$(dirname "$0")" >/dev/null 2>&1 ; pwd -P )"
-table_data_name="sensor1_AC_mag_score:score:sensor1_AC_mag_score:state"
+table_data_name=table_data_name="sensor1_AC_mag_score:score:sensor1_AC_mag_score:state"
 
 #input="./nodetest.list"
 echo $PWD # line 4 already cd to the current directory where the shell script is
@@ -12,7 +12,7 @@ ip=$2
 input=$1
 if [ -z "$input" ]
 then
-   echo "usage: live_run.sh live_run.list"
+   echo "usage: live_run.sh live_run.list https://sensorweb.us algtest sensorweb711"
    exit
 fi
 
@@ -47,11 +47,15 @@ do
   ip=${line_array[3]}
   user=${line_array[4]}
   passw=${line_array[5]}
+  start_time=${line_array[6]}
+  end_time=${line_array[7]}
 
   if [ -z "$mac" ]
   then
     exit
   fi
+
+  # baseParams="--version=v3 --append_version=True --table_data_name=${table_data_name}"
   
   if [ "$mode" = "T" ]
   then
@@ -69,8 +73,30 @@ do
   echo "ip: $ip"
   echo "user: $user"
   echo "passw: $passw"
+  echo "start_time: $start_time"
+  echo "end_time: $end_time"
 
   param="$baseParams"
+
+  # check if start_time and end_time are given
+  if [ -n "$start_time" ]
+  then
+    param="$baseParams --start=$start_time"
+
+    if [ -n "$end_time" ]
+    then
+      param="$baseParams --start=$start_time --end=$end_time"
+    else
+      # get the current time in format similar to 2023-01-14T23:09:53.562000
+      end_time=$(date +"%Y-%m-%dT%H:%M:%S.%6N")
+    fi
+    domain=$(extract_domain "$ip")
+    RM_INFLUX="$SCRIPTPATH/rm_influx_data.sh $domain algtest vitals $mac $start_time $end_time"
+    echo $RM_INFLUX
+    # cd $SCRIPTPATH 
+    $RM_INFLUX
+
+  fi
 
 
   now=$(date +"%T")
@@ -93,13 +119,12 @@ do
       if [ "$status" = "ON" ]
       then
         echo "$PYTHON $SERVICE"
-        echo "$status"
         echo
         # nohup /usr/bin/python3 $SERVICE &
-        # if [ -n "$start_time" ]
-        # then
-        #   $RM_INFLUX
-        # fi
+        if [ -n "$start_time" ]
+        then
+          $RM_INFLUX
+        fi
         # echo "cd $SCRIPTPATH"
         cd $SCRIPTPATH
         # nohup $PYTHON $SERVICE &
