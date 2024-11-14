@@ -110,6 +110,7 @@ def main(args):
  # Parameters from Config file
   buffersize   = 60 # config.get('general', 'buffersize')
   samplingrate = 4000 # int(config.get('general', 'samplingrate'))
+
   maxbuffersize   = 10*samplingrate
   buffer      = []
   buffertime  = []
@@ -119,7 +120,7 @@ def main(args):
   print("### Start time:", startEpoch, " ### \n")
   print("### End time:", endEpoch, " ### \n")
   print("Click here to see the results in Grafana:\n\n" + url)
-  # webbrowser.open(url, new=2)
+  webbrowser.open(url, new=2)
   startEpoch = math.floor(startEpoch)
   epoch2 = startEpoch - 1 # int( (current - datetime(1970,1,1)).total_seconds())
   epoch1 = epoch2 - 1
@@ -142,7 +143,7 @@ def main(args):
   print("shape of x1:",x1.shape)
   x1 /= np.linalg.norm(x1)
   score_start, x1 = 1, x1 #detect.SingularSpectrumTransformation(win_length=win_length, x0=x1, n_components=2,order=order, lag=lag,is_scaled=True).score_online(startdata)
-  Score_start=score_start+Score_start*10**5
+  Score_start=score_start+Score_start*10**4
   print("start score:",Score_start)
 
   try:
@@ -254,7 +255,8 @@ if __name__== '__main__':
   parser = argparse.ArgumentParser(description='Node Test - Smart Plugs', formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("unit", type=str, help='BDot MAC address', default='04:04:04:04:04:04')
   parser.add_argument("--start", type=str, default='2024-11-06T09:32:10.000', help='start time')
-  parser.add_argument("--end", type=str, default='2024-11-06T10:48:30.000', help='end time')    
+  parser.add_argument("--end", type=str, default='2024-11-06T10:48:30.000', help='end time')
+  parser.add_argument("--sample", type=str, default='1000', help='Sampling Rate')    
   parser.add_argument('--src_ip', type=str, default='https://sensordata.engr.uga.edu',
                       help='the default source influxdb server')   
   parser.add_argument('--dst_ip', type=str, default='https://sensordata.engr.uga.edu',
