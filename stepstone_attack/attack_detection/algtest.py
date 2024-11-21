@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from datetime import datetime, date
 from influxdb import InfluxDBClient
-import algorithm as alg
+#import algorithm as alg
 from algorithm_detect import stream_SST
 import time, math
 import operator
