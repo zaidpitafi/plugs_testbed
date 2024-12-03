@@ -184,7 +184,7 @@ def main(args):
       time.sleep(1)
       # quit()
 
-    print(result)
+    #print(result)
     points = list(result.get_points())
     values =  list(map(operator.itemgetter('value'), points))
     times  =  list(map(operator.itemgetter('time'),  points))
